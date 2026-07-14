@@ -1334,7 +1334,7 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (progActiveBase === 'OCT') radix = 8;
       else if (progActiveBase === 'BIN') radix = 2;
 
-      const tokenRegex = new RegExp(`\\b[0-9A-Fa-f]+\\b`, 'g');
+      const tokenRegex = /\b[0-9A-Fa-f]+\b/g;
       raw = raw.replace(tokenRegex, (match) => {
         const val = parseInt(match, radix);
         return isNaN(val) ? match : val.toString();
