@@ -998,6 +998,465 @@ body {
   color: #6146e5;
 }
 
+
+/* ==========================================================================
+   Financial View Layout
+   ========================================================================== */
+#financial-view {
+  padding: 16px;
+  overflow-y: auto;
+  display: none;
+}
+#financial-view.active {
+  display: flex;
+}
+
+.financial-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.financial-sidebar-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 180px;
+  border-right: 1px solid var(--panel-border);
+  padding-right: 16px;
+  flex-shrink: 0;
+}
+
+.fin-tab-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-primary);
+  font-weight: 500;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+.light-theme .fin-tab-btn {
+  background: rgba(255, 255, 255, 0.6);
+}
+.fin-tab-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.08);
+}
+.fin-tab-btn.active {
+  color: #00f0ff;
+  background: rgba(0, 240, 255, 0.1);
+  border-color: rgba(0, 240, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 240, 255, 0.1);
+}
+.light-theme .fin-tab-btn.active {
+  color: #00838f;
+  background: rgba(0, 188, 212, 0.08);
+  border-color: rgba(0, 188, 212, 0.3);
+}
+
+.financial-main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.fin-sub-view {
+  display: none;
+  flex-direction: column;
+  gap: 20px;
+}
+.fin-sub-view.active {
+  display: flex;
+}
+
+.fin-inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.fin-input-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fin-input-box label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.input-with-unit {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-unit input {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  color: var(--text-main);
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 500;
+  padding: 10px 40px 10px 14px;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+.input-with-unit input:focus {
+  border-color: #7b61ff;
+  box-shadow: 0 0 0 2px rgba(123, 97, 255, 0.2);
+}
+
+.input-with-unit span {
+  position: absolute;
+  right: 14px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.duration-unit input {
+  padding-right: 80px;
+}
+.duration-unit select {
+  position: absolute;
+  right: 6px;
+  width: 70px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--panel-border);
+  color: var(--text-main);
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.light-theme .duration-unit select {
+  background: #ffffff;
+}
+
+.fin-input-box select {
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  color: var(--text-main);
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.fin-input-box select:focus {
+  border-color: #7b61ff;
+}
+
+/* Outputs styling */
+.fin-outputs-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.fin-out-card {
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--panel-border);
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+}
+.light-theme .fin-out-card {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.fin-out-card.highlight {
+  background: rgba(123, 97, 255, 0.1);
+  border-color: rgba(123, 97, 255, 0.25);
+  box-shadow: 0 4px 16px rgba(123, 97, 255, 0.1);
+}
+.light-theme .fin-out-card.highlight {
+  background: rgba(97, 70, 229, 0.05);
+  border-color: rgba(97, 70, 229, 0.2);
+}
+
+.out-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.out-value {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.color-danger {
+  color: #ff3b30 !important;
+}
+.color-primary {
+  color: #7b61ff !important;
+}
+.light-theme .color-primary {
+  color: #6146e5 !important;
+}
+.fin-out-card.highlight .out-value {
+  font-size: 1.45rem;
+}
+
+/* Amortization Table styling */
+.amortization-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+.amortization-container h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.amortization-table-wrapper {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.1);
+}
+.light-theme .amortization-table-wrapper {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.amort-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-primary);
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+.amort-table th, 
+.amort-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.amort-table th {
+  position: sticky;
+  top: 0;
+  background: rgba(22, 20, 34, 0.95);
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  z-index: 1;
+}
+.light-theme .amort-table th {
+  background: rgba(240, 239, 248, 0.95);
+}
+
+.amort-table td {
+  font-family: var(--font-mono);
+  color: var(--text-main);
+}
+
+.amort-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+.light-theme .amort-table tr:hover td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.amort-table td:first-child,
+.amort-table th:first-child {
+  text-align: center;
+  width: 60px;
+}
+
+/* Responsive adjustment for Mobile */
+@media (max-width: 768px) {
+  .financial-container {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .financial-sidebar-tabs {
+    flex-direction: row;
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--panel-border);
+    padding-right: 0;
+    padding-bottom: 12px;
+  }
+  .fin-tab-btn {
+    justify-content: center;
+    padding: 10px;
+  }
+}
+
+
+/* ==========================================================================
+   Programmer View Layout
+   ========================================================================== */
+#programmer-view {
+  padding: 16px;
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+}
+#programmer-view.active {
+  display: flex;
+}
+
+.programmer-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.programmer-display {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+}
+.light-theme .programmer-display {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.prog-base-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.prog-base-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.light-theme .prog-base-row:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+.prog-base-row.active {
+  background: rgba(123, 97, 255, 0.12);
+  border: 1px solid rgba(123, 97, 255, 0.25);
+}
+.light-theme .prog-base-row.active {
+  background: rgba(97, 70, 229, 0.08);
+  border-color: rgba(97, 70, 229, 0.2);
+}
+
+.base-lbl {
+  font-size: 0.75rem;
+  font-weight: 700;
+  width: 50px;
+  color: var(--text-muted);
+}
+.prog-base-row.active .base-lbl {
+  color: #00f0ff;
+}
+.light-theme .prog-base-row.active .base-lbl {
+  color: #6146e5;
+}
+
+.base-prefix {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  width: 25px;
+}
+
+.base-val {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--text-main);
+  flex: 1;
+  text-align: left;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.programmer-keypad {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.prog-grid-left {
+  width: 240px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.prog-grid-right {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 10px;
+}
+
+/* Span helpers for keyboard grid */
+.prog-grid-right .span-v {
+  grid-row: span 2;
+  height: 100%;
+}
+.prog-grid-right .span-h {
+  grid-column: span 3;
+  width: 100%;
+}
+
+/* Disabled button states */
+.btn.prog-btn:disabled {
+  opacity: 0.2;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustment for Mobile */
+@media (max-width: 768px) {
+  .programmer-keypad {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .prog-grid-left {
+    width: 100%;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+  }
+}
+
 /* ==========================================================================
    Responsive & Adaptive Breakpoints
    ========================================================================== */

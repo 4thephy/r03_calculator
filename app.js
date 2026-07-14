@@ -35,6 +35,40 @@ document.addEventListener('DOMContentLoaded', () => {
   const convInputUnit = document.getElementById('converter-input-unit');
   const convOutputUnit = document.getElementById('converter-output-unit');
 
+  // --- Financial Elements ---
+  const finTabButtons = document.querySelectorAll('.fin-tab-btn');
+  const finSubViews = document.querySelectorAll('.fin-sub-view');
+  
+  const savPrincipal = document.getElementById('sav-principal');
+  const savRate = document.getElementById('sav-rate');
+  const savPeriod = document.getElementById('sav-period');
+  const savPeriodUnit = document.getElementById('sav-period-unit');
+  const savCompound = document.getElementById('sav-compound');
+  const savTax = document.getElementById('sav-tax');
+  
+  const savOutPrincipal = document.getElementById('sav-out-principal');
+  const savOutInterestPre = document.getElementById('sav-out-interest-pre');
+  const savOutTax = document.getElementById('sav-out-tax');
+  const savOutTotal = document.getElementById('sav-out-total');
+
+  const loanPrincipal = document.getElementById('loan-principal');
+  const loanRate = document.getElementById('loan-rate');
+  const loanPeriod = document.getElementById('loan-period');
+  const loanRepayType = document.getElementById('loan-repay-type');
+  
+  const loanOutPrincipal = document.getElementById('loan-out-principal');
+  const loanOutInterest = document.getElementById('loan-out-interest');
+  const loanOutTotal = document.getElementById('loan-out-total');
+  const loanAmortBody = document.getElementById('loan-amort-body');
+
+  // --- Programmer Elements ---
+  const progBaseRows = document.querySelectorAll('.prog-base-row');
+  const progValHex = document.getElementById('prog-val-hex');
+  const progValDec = document.getElementById('prog-val-dec');
+  const progValOct = document.getElementById('prog-val-oct');
+  const progValBin = document.getElementById('prog-val-bin');
+  const progButtons = document.querySelectorAll('.programmer-keypad button');
+
   // --- Application State ---
   let appMode = 'standard'; // standard, scientific, graphing, converter
   let currentTheme = 'dark';
@@ -44,6 +78,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Real-time expression editing buffer
   let expressionBuffer = '';
+
+  // Programmer Mode variables
+  let progInputExpr = '';
+  let progActiveBase = 'DEC'; // HEX, DEC, OCT, BIN
 
   // --- Math Constants & Helper Functions for Sandbox Evaluator ---
   const MathScope = {
@@ -96,7 +134,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (appMode === 'graphing') drawGraph();
     });
 
-    // 5. Setup event handlers
+    // 5. Initialize Financial calculations
+    runSavingsCalculation();
+    runLoanCalculation();
+
+    // 6. Initialize Programmer settings
+    updateProgrammerKeys();
+    runProgrammerCalculation();
+
+    // 7. Setup event handlers
     setupEventBindings();
   }
 
@@ -135,6 +181,15 @@ document.addEventListener('DOMContentLoaded', () => {
         resizeCanvas();
         drawGraph();
       }, 50); // slight delay to let DOM render
+    }
+
+    // Toggle active screen display format
+    if (mode === 'programmer') {
+      displayPreview.textContent = '';
+      updateProgrammerKeys();
+      runProgrammerCalculation();
+    } else {
+      updateDisplay();
     }
   }
 
@@ -862,8 +917,57 @@ document.addEventListener('DOMContentLoaded', () => {
     convInputUnit.addEventListener('change', runUnitConversion);
     convOutputUnit.addEventListener('change', runUnitConversion);
 
+    // Financial tabs switcher
+    finTabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        finTabButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const activeSub = btn.getAttribute('data-fin');
+        finSubViews.forEach(view => {
+          view.classList.toggle('active', view.id === `fin-${activeSub}-view`);
+        });
+        
+        if (activeSub === 'savings') runSavingsCalculation();
+        else runLoanCalculation();
+      });
+    });
+
+    // Financial input change hooks (Savings)
+    savPrincipal.addEventListener('input', runSavingsCalculation);
+    savRate.addEventListener('input', runSavingsCalculation);
+    savPeriod.addEventListener('input', runSavingsCalculation);
+    savPeriodUnit.addEventListener('change', runSavingsCalculation);
+    savCompound.addEventListener('change', runSavingsCalculation);
+    savTax.addEventListener('change', runSavingsCalculation);
+
+    // Financial input change hooks (Loan)
+    loanPrincipal.addEventListener('input', runLoanCalculation);
+    loanRate.addEventListener('input', runLoanCalculation);
+    loanPeriod.addEventListener('input', runLoanCalculation);
+    loanRepayType.addEventListener('change', runLoanCalculation);
+
     // History clear trigger
     btnClearHistory.addEventListener('click', clearHistory);
+
+    // Programmer base indicator click hooks
+    progBaseRows.forEach(row => {
+      row.addEventListener('click', () => {
+        const targetBase = row.getAttribute('data-base');
+        if (targetBase === progActiveBase) return;
+        switchProgrammerBase(targetBase);
+      });
+    });
+
+    // Programmer keypad click hooks
+    const progKeyButtons = document.querySelectorAll('.programmer-keypad button');
+    progKeyButtons.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        createRipple(e, btn);
+        const val = btn.getAttribute('data-prog-val');
+        handleProgrammerInput(val);
+      });
+    });
 
     // Physical Keyboard typing support
     document.addEventListener('keydown', (e) => {
@@ -873,6 +977,43 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const key = e.key;
+
+      if (appMode === 'programmer') {
+        const upperKey = key.toUpperCase();
+        const isHexLetter = ['A', 'B', 'C', 'D', 'E', 'F'].includes(upperKey);
+        const isDigit = key >= '0' && key <= '9';
+        
+        let valid = false;
+        if (isDigit) {
+          if (progActiveBase === 'BIN' && (key === '0' || key === '1')) valid = true;
+          else if (progActiveBase === 'OCT' && key >= '0' && key <= '7') valid = true;
+          else if (progActiveBase === 'DEC' || progActiveBase === 'HEX') valid = true;
+        } else if (isHexLetter && progActiveBase === 'HEX') {
+          valid = true;
+        }
+
+        if (valid) {
+          handleProgrammerInput(upperKey);
+        } else if (key === '+') {
+          handleProgrammerInput('+');
+        } else if (key === '-') {
+          handleProgrammerInput('-');
+        } else if (key === '*') {
+          handleProgrammerInput('*');
+        } else if (key === '/') {
+          handleProgrammerInput('/');
+        } else if (key === 'Enter' || key === '=') {
+          e.preventDefault();
+          const equalsBtn = document.getElementById('prog-btn-equals');
+          createRipple(e, equalsBtn);
+          handleProgrammerInput('equals');
+        } else if (key === 'Backspace') {
+          handleProgrammerInput('backspace');
+        } else if (key === 'Escape' || key === 'Delete') {
+          handleProgrammerInput('clear');
+        }
+        return;
+      }
 
       if (key >= '0' && key <= '9') {
         handleInput(key);
@@ -901,6 +1042,354 @@ document.addEventListener('DOMContentLoaded', () => {
         handleInput('()');
       }
     });
+  }
+
+  // --- Financial Calculation Algorithms ---
+  function formatKoreanCurrency(amount) {
+    // Round to whole KRW currency amount
+    const rounded = Math.round(amount);
+    return rounded.toLocaleString('ko-KR') + '원';
+  }
+
+  function runSavingsCalculation() {
+    const P = parseFloat(savPrincipal.value);
+    const annualRatePercent = parseFloat(savRate.value);
+    const periodVal = parseFloat(savPeriod.value);
+    const periodUnit = savPeriodUnit.value;
+    const compoundType = savCompound.value;
+    const taxType = savTax.value;
+
+    if (isNaN(P) || isNaN(annualRatePercent) || isNaN(periodVal) || P < 0 || annualRatePercent < 0 || periodVal <= 0) {
+      savOutPrincipal.textContent = '0원';
+      savOutInterestPre.textContent = '0원';
+      savOutTax.textContent = '0원';
+      savOutTotal.textContent = '0원';
+      return;
+    }
+
+    // Convert period to months
+    const totalMonths = periodUnit === 'year' ? periodVal * 12 : periodVal;
+    const tYears = totalMonths / 12;
+    const r = annualRatePercent / 100;
+
+    let interestPre = 0;
+
+    if (compoundType === 'simple') {
+      // Simple Interest: P * r * t
+      interestPre = P * r * tYears;
+    } else if (compoundType === 'compound') {
+      // Yearly Compound Interest: P * (1 + r)^t
+      interestPre = P * Math.pow(1 + r, tYears) - P;
+    } else if (compoundType === 'monthly-compound') {
+      // Monthly Compound Interest: P * (1 + r/12)^months
+      interestPre = P * Math.pow(1 + r/12, totalMonths) - P;
+    }
+
+    // Apply tax rate (General: 15.4%, Free: 0%)
+    const taxRate = taxType === 'general' ? 0.154 : 0.0;
+    const taxVal = interestPre * taxRate;
+    const netReceived = P + interestPre - taxVal;
+
+    // Display formatted results
+    savOutPrincipal.textContent = formatKoreanCurrency(P);
+    savOutInterestPre.textContent = formatKoreanCurrency(interestPre);
+    savOutTax.textContent = formatKoreanCurrency(taxVal);
+    savOutTotal.textContent = formatKoreanCurrency(netReceived);
+  }
+
+  function runLoanCalculation() {
+    const L = parseFloat(loanPrincipal.value);
+    const annualRatePercent = parseFloat(loanRate.value);
+    const n = parseInt(loanPeriod.value);
+    const repayType = loanRepayType.value;
+
+    if (isNaN(L) || isNaN(annualRatePercent) || isNaN(n) || L < 0 || annualRatePercent < 0 || n <= 0) {
+      loanOutPrincipal.textContent = '0원';
+      loanOutInterest.textContent = '0원';
+      loanOutTotal.textContent = '0원';
+      loanAmortBody.innerHTML = '';
+      return;
+    }
+
+    const r = annualRatePercent / 100;
+    const i = r / 12; // monthly rate
+
+    let totalInterest = 0;
+    let totalRepay = 0;
+    let htmlRows = '';
+    let remainingBalance = L;
+
+    if (repayType === 'equal-both') {
+      // Equal Principal & Interest (원리금균등상환)
+      let monthlyPayment = 0;
+      if (i === 0) {
+        monthlyPayment = L / n;
+      } else {
+        monthlyPayment = L * (i * Math.pow(1 + i, n)) / (Math.pow(1 + i, n) - 1);
+      }
+
+      for (let k = 1; k <= n; k++) {
+        const interestPart = remainingBalance * i;
+        const principalPart = monthlyPayment - interestPart;
+        remainingBalance -= principalPart;
+
+        // Clean final month floating-point errors
+        const currentBalance = k === n ? 0 : Math.max(0, remainingBalance);
+
+        totalInterest += interestPart;
+
+        htmlRows += `
+          <tr>
+            <td>${k}회</td>
+            <td>${formatKoreanCurrency(monthlyPayment)}</td>
+            <td>${formatKoreanCurrency(principalPart)}</td>
+            <td>${formatKoreanCurrency(interestPart)}</td>
+            <td>${formatKoreanCurrency(currentBalance)}</td>
+          </tr>
+        `;
+      }
+      totalRepay = L + totalInterest;
+
+    } else if (repayType === 'equal-principal') {
+      // Equal Principal (원금균등상환)
+      const principalPart = L / n;
+
+      for (let k = 1; k <= n; k++) {
+        const interestPart = remainingBalance * i;
+        const monthlyPayment = principalPart + interestPart;
+        remainingBalance -= principalPart;
+
+        const currentBalance = k === n ? 0 : Math.max(0, remainingBalance);
+
+        totalInterest += interestPart;
+
+        htmlRows += `
+          <tr>
+            <td>${k}회</td>
+            <td>${formatKoreanCurrency(monthlyPayment)}</td>
+            <td>${formatKoreanCurrency(principalPart)}</td>
+            <td>${formatKoreanCurrency(interestPart)}</td>
+            <td>${formatKoreanCurrency(currentBalance)}</td>
+          </tr>
+        `;
+      }
+      totalRepay = L + totalInterest;
+
+    } else if (repayType === 'maturity') {
+      // Maturity Repayment (만기일시상환)
+      const interestPart = L * i;
+
+      for (let k = 1; k <= n; k++) {
+        const isFinalMonth = k === n;
+        const principalPart = isFinalMonth ? L : 0;
+        const monthlyPayment = interestPart + principalPart;
+        remainingBalance = isFinalMonth ? 0 : L;
+
+        totalInterest += interestPart;
+
+        htmlRows += `
+          <tr>
+            <td>${k}회</td>
+            <td>${formatKoreanCurrency(monthlyPayment)}</td>
+            <td>${formatKoreanCurrency(principalPart)}</td>
+            <td>${formatKoreanCurrency(interestPart)}</td>
+            <td>${formatKoreanCurrency(remainingBalance)}</td>
+          </tr>
+        `;
+      }
+      totalRepay = L + totalInterest;
+    }
+
+    // Display formatted results
+    loanOutPrincipal.textContent = formatKoreanCurrency(L);
+    loanOutInterest.textContent = formatKoreanCurrency(totalInterest);
+    loanOutTotal.textContent = formatKoreanCurrency(totalRepay);
+    loanAmortBody.innerHTML = htmlRows;
+  }
+
+  // --- Programmer Mode Calculations & UI ---
+  function formatProgrammerInput(expr) {
+    if (!expr) return '0';
+    return expr
+      .replace(/\*/g, '×')
+      .replace(/\//g, '÷')
+      .replace(/-/g, '−');
+  }
+
+  function formatBinary(binStr) {
+    const clean = binStr.replace(/\s/g, '');
+    const groups = [];
+    for (let i = clean.length; i > 0; i -= 4) {
+      groups.unshift(clean.slice(Math.max(0, i - 4), i));
+    }
+    return groups.join(' ');
+  }
+
+  function handleProgrammerInput(val) {
+    if (val === 'clear') {
+      progInputExpr = '';
+      runProgrammerCalculation();
+    } else if (val === 'backspace') {
+      const match = progInputExpr.match(/(AND|OR|XOR|NOT|<<|>>)$/);
+      if (match) {
+        progInputExpr = progInputExpr.slice(0, -match[0].length);
+      } else {
+        progInputExpr = progInputExpr.slice(0, -1);
+      }
+      progInputExpr = progInputExpr.trimEnd();
+      runProgrammerCalculation();
+    } else if (val === 'equals') {
+      evaluateProgrammerExprFinal();
+    } else {
+      let appendStr = val;
+      const lastChar = progInputExpr.slice(-1);
+
+      if (['AND', 'OR', 'XOR', '<<', '>>'].includes(val)) {
+        appendStr = ` ${val} `;
+      } else if (val === 'NOT') {
+        appendStr = ` NOT `;
+      }
+
+      progInputExpr += appendStr;
+      runProgrammerCalculation();
+    }
+  }
+
+  function switchProgrammerBase(newBase) {
+    const currentVal = parseAndEvalProgrammer(progInputExpr);
+    
+    progActiveBase = newBase;
+    progBaseRows.forEach(row => {
+      row.classList.toggle('active', row.getAttribute('data-base') === newBase);
+    });
+
+    if (currentVal !== null && !isNaN(currentVal)) {
+      let formattedVal = '';
+      if (newBase === 'HEX') {
+        formattedVal = (currentVal >>> 0).toString(16).toUpperCase();
+      } else if (newBase === 'DEC') {
+        formattedVal = currentVal.toString(10);
+      } else if (newBase === 'OCT') {
+        formattedVal = (currentVal >>> 0).toString(8);
+      } else if (newBase === 'BIN') {
+        formattedVal = (currentVal >>> 0).toString(2);
+      }
+      progInputExpr = formattedVal === '0' ? '' : formattedVal;
+    } else {
+      progInputExpr = '';
+    }
+
+    updateProgrammerKeys();
+    runProgrammerCalculation();
+  }
+
+  function updateProgrammerKeys() {
+    const hexKeys = ['A', 'B', 'C', 'D', 'E', 'F'];
+    const decKeys = ['8', '9'];
+    const octKeys = ['2', '3', '4', '5', '6', '7'];
+
+    const allProgButtons = document.querySelectorAll('.prog-btn');
+    allProgButtons.forEach(btn => {
+      const val = btn.getAttribute('data-prog-val');
+      if (!val) return;
+
+      let disabled = false;
+      if (progActiveBase === 'BIN') {
+        if (hexKeys.includes(val) || decKeys.includes(val) || octKeys.includes(val)) {
+          disabled = true;
+        }
+      } else if (progActiveBase === 'OCT') {
+        if (hexKeys.includes(val) || decKeys.includes(val)) {
+          disabled = true;
+        }
+      } else if (progActiveBase === 'DEC') {
+        if (hexKeys.includes(val)) {
+          disabled = true;
+        }
+      }
+
+      if (['clear', 'backspace', 'equals', '+', '-', '*', '/', 'AND', 'OR', 'XOR', 'NOT', '<<', '>>'].includes(val)) {
+        disabled = false;
+      }
+
+      btn.disabled = disabled;
+    });
+  }
+
+  function parseAndEvalProgrammer(expr) {
+    if (!expr.trim()) return 0;
+
+    try {
+      let raw = expr
+        .replace(/\bAND\b/g, '&')
+        .replace(/\bOR\b/g, '|')
+        .replace(/\bXOR\b/g, '^')
+        .replace(/\bNOT\b/g, '~')
+        .replace(/\bLsh\b/g, '<<')
+        .replace(/\bRsh\b/g, '>>');
+
+      let radix = 10;
+      if (progActiveBase === 'HEX') radix = 16;
+      else if (progActiveBase === 'DEC') radix = 10;
+      else if (progActiveBase === 'OCT') radix = 8;
+      else if (progActiveBase === 'BIN') radix = 2;
+
+      const tokenRegex = new RegExp(`\\b[0-9A-Fa-f]+\\b`, 'g');
+      raw = raw.replace(tokenRegex, (match) => {
+        const val = parseInt(match, radix);
+        return isNaN(val) ? match : val.toString();
+      });
+
+      if (/[^0-9\+\-\*\/\(\)\s\&\|\^\~\<\>]/g.test(raw)) {
+        return null;
+      }
+
+      const runner = new Function(`return (${raw}) | 0;`);
+      return runner();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function runProgrammerCalculation() {
+    displayInput.textContent = formatProgrammerInput(progInputExpr) || '0';
+    displayPreview.textContent = '';
+
+    const val = parseAndEvalProgrammer(progInputExpr);
+    if (val !== null && !isNaN(val)) {
+      progValHex.textContent = (val >>> 0).toString(16).toUpperCase();
+      progValDec.textContent = val.toString(10);
+      progValOct.textContent = (val >>> 0).toString(8);
+      progValBin.textContent = formatBinary((val >>> 0).toString(2));
+    } else {
+      progValHex.textContent = '0';
+      progValDec.textContent = '0';
+      progValOct.textContent = '0';
+      progValBin.textContent = '0';
+    }
+  }
+
+  function evaluateProgrammerExprFinal() {
+    if (!progInputExpr) return;
+
+    const val = parseAndEvalProgrammer(progInputExpr);
+    if (val !== null && !isNaN(val)) {
+      let formattedVal = '';
+      if (progActiveBase === 'HEX') {
+        formattedVal = (val >>> 0).toString(16).toUpperCase();
+      } else if (progActiveBase === 'DEC') {
+        formattedVal = val.toString(10);
+      } else if (progActiveBase === 'OCT') {
+        formattedVal = (val >>> 0).toString(8);
+      } else if (progActiveBase === 'BIN') {
+        formattedVal = (val >>> 0).toString(2);
+      }
+
+      progInputExpr = formattedVal;
+      runProgrammerCalculation();
+    } else {
+      shakeDisplay();
+    }
   }
 
   // Launch app

@@ -41,6 +41,14 @@
           <i data-lucide="refresh-cw"></i>
           <span>단위 변환</span>
         </button>
+        <button class="tab-btn" data-mode="financial">
+          <i data-lucide="wallet"></i>
+          <span>금융 계산</span>
+        </button>
+        <button class="tab-btn" data-mode="programmer">
+          <i data-lucide="code-2"></i>
+          <span>프로그래머</span>
+        </button>
       </nav>
 
       <!-- Utility Controls -->
@@ -190,6 +198,234 @@
               </div>
             </div>
           </div>
+
+          <!-- Financial View -->
+          <div id="financial-view" class="workspace-view">
+            <div class="financial-container">
+              <div class="financial-sidebar-tabs">
+                <button class="fin-tab-btn active" data-fin="savings">
+                  <i data-lucide="piggy-bank"></i><span>예적금 이자</span>
+                </button>
+                <button class="fin-tab-btn" data-fin="loan">
+                  <i data-lucide="percent"></i><span>대출 상환</span>
+                </button>
+              </div>
+
+              <div class="financial-main-content">
+                <!-- Savings Sub-View -->
+                <div id="fin-savings-view" class="fin-sub-view active">
+                  <div class="fin-inputs-grid">
+                    <div class="fin-input-box">
+                      <label>예치 원금</label>
+                      <div class="input-with-unit">
+                        <input type="number" id="sav-principal" value="10000000" step="100000" min="0">
+                        <span>원</span>
+                      </div>
+                    </div>
+                    <div class="fin-input-box">
+                      <label>연이자율</label>
+                      <div class="input-with-unit">
+                        <input type="number" id="sav-rate" value="5.0" step="0.1" min="0">
+                        <span>%</span>
+                      </div>
+                    </div>
+                    <div class="fin-input-box">
+                      <label>적립 기간</label>
+                      <div class="input-with-unit duration-unit">
+                        <input type="number" id="sav-period" value="12" min="1">
+                        <select id="sav-period-unit">
+                          <option value="month">개월</option>
+                          <option value="year">년</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="fin-input-box">
+                      <label>이자 계산 방식</label>
+                      <select id="sav-compound">
+                        <option value="simple">단리 (Simple)</option>
+                        <option value="compound">연복리 (Yearly Compound)</option>
+                        <option value="monthly-compound">월복리 (Monthly Compound)</option>
+                      </select>
+                    </div>
+                    <div class="fin-input-box">
+                      <label>세율 우대</label>
+                      <select id="sav-tax">
+                        <option value="general">일반과세 (15.4%)</option>
+                        <option value="free">비과세 (0%)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Savings Output Cards -->
+                  <div class="fin-outputs-panel">
+                    <div class="fin-out-card">
+                      <span class="out-label">원금 합계</span>
+                      <span class="out-value" id="sav-out-principal">0원</span>
+                    </div>
+                    <div class="fin-out-card">
+                      <span class="out-label">세전 이자</span>
+                      <span class="out-value" id="sav-out-interest-pre">0원</span>
+                    </div>
+                    <div class="fin-out-card">
+                      <span class="out-label">이자소득세</span>
+                      <span class="out-value color-danger" id="sav-out-tax">0원</span>
+                    </div>
+                    <div class="fin-out-card highlight">
+                      <span class="out-label">최종 세후 수령액</span>
+                      <span class="out-value color-primary" id="sav-out-total">0원</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Loan Sub-View -->
+                <div id="fin-loan-view" class="fin-sub-view">
+                  <div class="fin-inputs-grid">
+                    <div class="fin-input-box">
+                      <label>대출 원금</label>
+                      <div class="input-with-unit">
+                        <input type="number" id="loan-principal" value="10000000" step="100000" min="0">
+                        <span>원</span>
+                      </div>
+                    </div>
+                    <div class="fin-input-box">
+                      <label>연이자율</label>
+                      <div class="input-with-unit">
+                        <input type="number" id="loan-rate" value="6.0" step="0.1" min="0">
+                        <span>%</span>
+                      </div>
+                    </div>
+                    <div class="fin-input-box">
+                      <label>대출 기간</label>
+                      <div class="input-with-unit">
+                        <input type="number" id="loan-period" value="12" min="1">
+                        <span>개월</span>
+                      </div>
+                    </div>
+                    <div class="fin-input-box">
+                      <label>상환 방법</label>
+                      <select id="loan-repay-type">
+                        <option value="equal-both">원리금균등상환</option>
+                        <option value="equal-principal">원금균등상환</option>
+                        <option value="maturity">만기일시상환</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Loan Output Cards -->
+                  <div class="fin-outputs-panel">
+                    <div class="fin-out-card">
+                      <span class="out-label">대출 원금</span>
+                      <span class="out-value" id="loan-out-principal">0원</span>
+                    </div>
+                    <div class="fin-out-card">
+                      <span class="out-label">총 이자액</span>
+                      <span class="out-value color-danger" id="loan-out-interest">0원</span>
+                    </div>
+                    <div class="fin-out-card highlight">
+                      <span class="out-label">총 상환 금액</span>
+                      <span class="out-value color-primary" id="loan-out-total">0원</span>
+                    </div>
+                  </div>
+
+                  <!-- Amortization Schedule Table -->
+                  <div class="amortization-container">
+                    <h4>월별 상환 스케줄</h4>
+                    <div class="amortization-table-wrapper">
+                      <table class="amort-table">
+                        <thead>
+                          <tr>
+                            <th>회차</th>
+                            <th>납입액</th>
+                            <th>납입 원금</th>
+                            <th>이자</th>
+                            <th>잔액</th>
+                          </tr>
+                        </thead>
+                        <tbody id="loan-amort-body">
+                          <!-- Filled dynamically -->
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Programmer View -->
+          <div id="programmer-view" class="workspace-view">
+            <div class="programmer-container">
+              <!-- Base Indicators Panel -->
+              <div class="programmer-display">
+                <div class="prog-base-row" data-base="HEX" id="prog-row-hex">
+                  <span class="base-lbl">HEX</span>
+                  <span class="base-prefix">0x</span>
+                  <span class="base-val" id="prog-val-hex">0</span>
+                </div>
+                <div class="prog-base-row active" data-base="DEC" id="prog-row-dec">
+                  <span class="base-lbl">DEC</span>
+                  <span class="base-prefix"></span>
+                  <span class="base-val" id="prog-val-dec">0</span>
+                </div>
+                <div class="prog-base-row" data-base="OCT" id="prog-row-oct">
+                  <span class="base-lbl">OCT</span>
+                  <span class="base-prefix">0o</span>
+                  <span class="base-val" id="prog-val-oct">0</span>
+                </div>
+                <div class="prog-base-row" data-base="BIN" id="prog-row-bin">
+                  <span class="base-lbl">BIN</span>
+                  <span class="base-prefix">0b</span>
+                  <span class="base-val" id="prog-val-bin">0</span>
+                </div>
+              </div>
+
+              <!-- Keypads Layout -->
+              <div class="programmer-keypad">
+                <!-- Left Keypad (Hex letters & bitwise ops) -->
+                <div class="prog-grid-left">
+                  <button class="btn btn-sci prog-btn" data-prog-val="A">A</button>
+                  <button class="btn btn-sci prog-btn" data-prog-val="B">B</button>
+                  <button class="btn btn-sci prog-btn" data-prog-val="AND">AND</button>
+                  <button class="btn btn-sci prog-btn" data-prog-val="OR">OR</button>
+                  
+                  <button class="btn btn-sci prog-btn" data-prog-val="C">C</button>
+                  <button class="btn btn-sci prog-btn" data-prog-val="D">D</button>
+                  <button class="btn btn-sci prog-btn" data-prog-val="XOR">XOR</button>
+                  <button class="btn btn-sci prog-btn" data-prog-val="NOT">NOT</button>
+                  
+                  <button class="btn btn-sci prog-btn" data-prog-val="E">E</button>
+                  <button class="btn btn-sci prog-btn" data-prog-val="F">F</button>
+                  <button class="btn btn-sci prog-btn" data-prog-val="<<">Lsh</button>
+                  <button class="btn btn-sci prog-btn" data-prog-val=">>">Rsh</button>
+                </div>
+
+                <!-- Right Keypad (Standard numpad with operations) -->
+                <div class="prog-grid-right">
+                  <button class="btn btn-action prog-btn" data-prog-val="clear">AC</button>
+                  <button class="btn btn-action prog-btn" data-prog-val="backspace"><i data-lucide="arrow-left"></i></button>
+                  <button class="btn btn-operator prog-btn" data-prog-val="/">÷</button>
+                  <button class="btn btn-operator prog-btn" data-prog-val="*">×</button>
+                  
+                  <button class="btn btn-num prog-btn" data-prog-val="7">7</button>
+                  <button class="btn btn-num prog-btn" data-prog-val="8">8</button>
+                  <button class="btn btn-num prog-btn" data-prog-val="9">9</button>
+                  <button class="btn btn-operator prog-btn" data-prog-val="-">−</button>
+                  
+                  <button class="btn btn-num prog-btn" data-prog-val="4">4</button>
+                  <button class="btn btn-num prog-btn" data-prog-val="5">5</button>
+                  <button class="btn btn-num prog-btn" data-prog-val="6">6</button>
+                  <button class="btn btn-operator prog-btn" data-prog-val="+">+</button>
+                  
+                  <button class="btn btn-num prog-btn" data-prog-val="1">1</button>
+                  <button class="btn btn-num prog-btn" data-prog-val="2">2</button>
+                  <button class="btn btn-num prog-btn" data-prog-val="3">3</button>
+                  <button class="btn btn-equals prog-btn span-v" data-prog-val="equals" id="prog-btn-equals">=</button>
+                  
+                  <button class="btn btn-num prog-btn span-h" data-prog-val="0">0</button>
+                </div>
+              </div>
+            </div>
 
         </div>
       </div>
